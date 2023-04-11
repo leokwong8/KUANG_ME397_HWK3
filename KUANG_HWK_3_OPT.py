@@ -21,13 +21,20 @@ demand           = 1000000000   # GW, how much power must the system deliver?
 model = AbstractModel(name= 'cost_to_run_ERCOT model')
 
 # create model sets
-model.t = Set(initialize = [i for i in range(8760)], ordered = True)
-model.tech = Set(initialize = ['s_cap','w_cap','ESS_power_cap', 'ESS_energy_cap'], ordered = True)
+model.t     = Set(initialize = [i for i in range(8760)], ordered = True)
+model.tech  = Set(initialize = ['s_cap','w_cap','ESS_power_cap', 'ESS_energy_cap'], ordered = True)
 model.solar = Param(model.t)
-model.wind = Param(model.t)
-model.cost = Param(model.tech, initialize={'s_cap' : solar_cap_cost,'w_cap' : wind_cap_cost,
+model.wind  = Param(model.t)
+model.cost  = Param(model.tech, initialize={'s_cap' : solar_cap_cost,'w_cap' : wind_cap_cost,
                     'ESS_power_cap' : ESS_p_cap_cost, 'ESS_energy_cap' : ESS_e_cap_cost})
 
-
+# load data into parameters, soloar and wind data are hourly capacity factor data
 data = DataPortal()
-data.load(filename = 'opt_model_data/2022_ERCOT_data.csv', select = ('t', 'solar'),param = model.solar, index = model.t)
+data.load(filename = 'opt_model_data/2022_ERCOT_data.csv', select = ('t', 'solar', 'wind'),param = [model.solar,model.wind], index = model.t)
+
+# define variables
+model.cap      = Var(model.tech, domain = NonNegativeReals)
+model.ESS_SOC  = Var(model.t, domain = NonNegativeReals)
+model.ESS_c    = Var(model.t, domain = NonNegativeReals)
+model.ESS_d    = Var(model.t, domain = NonNegativeReals)
+model.curt     = Var(model.t, domain = NonNegativeReals)
